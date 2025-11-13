@@ -9,7 +9,6 @@ exports.calculate = function(req, res) {
     res.status(400);
     res.json({ error: err.message });
   });
-
   // Add operators (including power and sqrt)
   var operations = {
     'add':      function(a, b) { return Number(a) + Number(b) },
