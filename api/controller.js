@@ -10,12 +10,14 @@ exports.calculate = function(req, res) {
     res.json({ error: err.message });
   });
 
-  // TODO: Add operator
+  // Add operators (including power and sqrt)
   var operations = {
     'add':      function(a, b) { return Number(a) + Number(b) },
     'subtract': function(a, b) { return a - b },
     'multiply': function(a, b) { return a * b },
     'divide':   function(a, b) { return a / b },
+    'power':    function(a, b) { return Math.pow(Number(a), Number(b)) },
+    'sqrt':     function(a, b) { return Math.sqrt(Number(a)) },
   };
 
   if (!req.query.operation) {
@@ -34,11 +36,17 @@ exports.calculate = function(req, res) {
     throw new Error("Invalid operand1: " + req.query.operand1);
   }
 
-  if (!req.query.operand2 ||
-      !req.query.operand2.match(/^(-)?[0-9\.]+(e(-)?[0-9]+)?$/) ||
-      req.query.operand2.replace(/[-0-9e]/g, '').length > 1) {
-    throw new Error("Invalid operand2: " + req.query.operand2);
+  // operand2 is optional for unary operations like 'sqrt'
+  if (req.query.operation !== 'sqrt') {
+    if (!req.query.operand2 ||
+        !req.query.operand2.match(/^(-)?[0-9\.]+(e(-)?[0-9]+)?$/) ||
+        req.query.operand2.replace(/[-0-9e]/g, '').length > 1) {
+      throw new Error("Invalid operand2: " + req.query.operand2);
+    }
   }
 
-  res.json({ result: operation(req.query.operand1, req.query.operand2) });
+  var a = req.query.operand1;
+  var b = req.query.operand2;
+
+  res.json({ result: operation(a, b) });
 };
