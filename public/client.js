@@ -33,13 +33,22 @@ function calculate(operand1, operand2, operation) {
         case '/':
             uri += "?operation=divide";
             break;
+        case '^':
+            uri += "?operation=power";
+            break;
+        case '√':
+            uri += "?operation=sqrt";
+            break;
         default:
             setError();
             return;
     }
 
     uri += "&operand1=" + encodeURIComponent(operand1);
-    uri += "&operand2=" + encodeURIComponent(operand2);
+    // Only include operand2 for binary operations
+    if (operation !== '√' && typeof operand2 !== 'undefined') {
+        uri += "&operand2=" + encodeURIComponent(operand2);
+    }
 
     setLoading(true);
 
@@ -116,14 +125,43 @@ function operationPressed(op) {
     state = states.operator;
 }
 
+function sqrtPressed() {
+    operand1 = getValue();
+    operation = '√';
+    state = states.operator;
+}
+
+function powerPressed() {
+    operand1 = getValue();
+    operation = '^';
+    state = states.operator;
+}
+
 function equalPressed() {
     if (state < states.operand2) {
+        // If the operation is a unary operator (sqrt), perform calculation
+        if (operation === '√') {
+            // operand1 was set when the operator was pressed
+            operand2 = undefined;
+            state = states.complete;
+            calculate(operand1, operand2, operation);
+            return;
+        }
+
         state = states.complete;
         return;
     }
 
     if (state == states.operand2) {
         operand2 = getValue();
+        // If sqrt was pressed first and then a number entered, use that number as operand1
+        if (operation === '√') {
+            operand1 = operand2;
+            operand2 = undefined;
+            state = states.complete;
+            calculate(operand1, operand2, operation);
+            return;
+        }
         state = states.complete;
     } else if (state == states.complete) {
         operand1 = getValue();
@@ -134,14 +172,24 @@ function equalPressed() {
 
 // TODO: Add key press logics
 document.addEventListener('keypress', (event) => {
-    if (event.key.match(/^\d+$/)) {
-        numberPressed(event.key);
-    } else if (event.key == '.') {
+    var k = event.key;
+
+    if (k.match(/^\d$/)) {
+        numberPressed(k);
+    } else if (k == '.') {
         decimalPressed();
-    } else if (event.key.match(/^[-*+/]$/)) {
-        operationPressed(event.key);
-    } else if (event.key == '=') {
+    } else if (k.match(/^[-*+\/]|\^$/)) {
+        // include '^' for power
+        operationPressed(k);
+    } else if (k == '√' || k.toLowerCase() == 'r') {
+        // 'r' as a convenient sqrt shortcut
+        sqrtPressed();
+    } else if (k == '=' || k == 'Enter') {
         equalPressed();
+    } else if (k.toLowerCase() == 'c') {
+        clearPressed();
+    } else if (k == 'Backspace') {
+        clearEntryPressed();
     }
 });
 
